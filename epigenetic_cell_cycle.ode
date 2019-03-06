@@ -1,0 +1,100 @@
+###########################################################
+### Model epigenetic - cell cycle coupled networks
+###########################################################
+
+
+### ODE for the epigenetic network
+
+### Initial conditions (1):
+init NFKB=0.00045, LIN28=0.34, let7=40, mIL6=0.0003, IL6=0.001, mRas=0.00001, Ras=0.0001, STAT3=0.0001, miR21=0.0003, mPTEN=0.01, PTEN=0.17,
+
+### Initial conditions (2):
+#init NFKB=0.5, LIN28=0.5, let7=1, mIL6=0.5, IL6=0.5 mRas=0.5, Ras=0.5, STAT3=0.5, miR21=0, mPTEN=0, PTEN=0
+
+
+dNFKB/dt=(kaa1nfkb*Src + kaa2nfkb*IL6 + kaa3nfkb*Ras)*(Kipten/(Kipten+PTEN))*(NFKBi/(Kanfkb+NFKBi)) - kdnfkb*(NFKB/(Kinfkb+NFKB))
+
+dLIN28/dt=Vslin28*(NFKB/(Ka1nfkb+NFKB)) - kdlin28*LIN28
+
+dlet7/dt=(ks1let7*(Kilet7/(Kilet7+LIN28)) - k9*mIL6*let7 + k10*mIL6let7 - k11*mRas*let7 + k12*mRaslet7 - k1*mMd*let7 + k2*mMdlet7 - k3*mMe*let7 + k4*mMelet7 - k5*mMa*let7 + k6*mMalet7 - k7*mMb*let7 + k8*mMblet7 + deg*(kdmMdlet7*mMdlet7+kdmMelet7*mMelet7+kdmMalet7*mMalet7+kdmMblet7*mMblet7+kdraslet*mRaslet7+kdillet*mIL6let7) - kdlet7*let7)
+
+dmIL6/dt=Vs1mil6 + Vs2mil6*(NFKB/(Ka2nfkb+NFKB)) - k9*mIL6*let7 + k10*mIL6let7 - kdmil6*mIL6
+
+dmIL6let7/dt=k9*mIL6*let7 - k10*mIL6let7 - kdillet*mIL6let7
+
+dIL6/dt=ks1il6*mIL6 - kdil6*IL6
+
+dmRas/dt=Vs1mras - k11*mRas*let7 + k12*mRaslet7 - kdmras*mRas
+
+dmRaslet7/dt=k11*mRas*let7 - k12*mRaslet7 - kdraslet*mRaslet7
+
+dRas/dt=ks1ras*mRas - kdras*Ras
+
+dSTAT3/dt=Vsstat*(IL6/(Ka2il6+IL6)) - kdstat*STAT3
+
+dmiR21/dt=Vsmir21*(STAT3/(Kastat+STAT3)) - k13*mPTEN*miR21 + k14*miRmpten + deg*(kdmiRmp*miRmpten) - kdmir21*miR21
+
+dmPTEN/dt=Vsmpten - k13*mPTEN*miR21 + k14*miRmpten - kdmpten*mPTEN
+
+dmiRmpten/dt=k13*mPTEN*miR21 - k14*miRmpten - kdmiRmp*miRmpten
+
+dPTEN/dt=kspten*mPTEN - kdpten*PTEN
+
+
+NFKBi=NFKBtot-NFKB
+
+param Src=0.01, ks1let7=10, Kilet7=0.1, kdlet7=0.05, kaa1nfkb=10, kaa2nfkb=0.09, 
+param kaa3nfkb=1, Kanfkb=0.01, Kinfkb=0.02, kdnfkb=0.01, NFKBtot=1, Kasrc=2, Ka1il6=10, Ka2il6=40, Karas=10, Kipten=5,
+param Vslin28=0.1, kdlin28=0.015, Ka1nfkb=0.01,
+param k9=10, k10=0.01, Vs1mil6=0.12, Vs2mil6=0.01, kdmil6=0.01, kdillet=0.5, Ka2nfkb=5,
+param ks1il6=1.5, kdil6=0.4,
+param Vs1mras=0.006, k11=10, k12=0.01, kdmras=0.01,
+param kdraslet=0.5, ks1ras=0.25, kdras=0.03,
+param Vsstat=0.15, kdstat=0.03,
+param Vsmir21=4, Kastat=5, k13=10, k14=0.01, k15=10, k16=0.01, kdmir21=0.2,
+param Vsmpten=0.001, kdmpten=0.1,
+param kdmiRmp=0.1, kspten=0.9, kdpten=0.05,
+
+
+
+
+### ODE for the cell cycle
+
+init Md=0.01, E2F=0.01, Me=0.01, Ma=0.01, Mb=0.01, APC=0.01
+
+dmMd/dt=vsmcyc*ksmmd*GF - k1*mMd*let7 + k2*mMdlet7 - kdmmd*mMd
+dMd/dt=ksd*mMd-kdmd*Md
+dmMdlet7/dt=k1*mMd*let7 - k2*mMdlet7 - kdmMdlet7*mMdlet7
+dE2F/dt=k1e2f*((E2Ftot-E2F)/((E2Ftot-E2F)+Kae2f))*(Md+Me)-k2e2f*(E2F/(E2F+Kie2f))*Ma
+dmMe/dt=vsmcyc*ksmme*E2F - k3*mMe*let7 + k4*mMelet7 -kdmme*mMe
+dMe/dt=kse*mMe-kdme*Ma*(Me/(Me+Kde)) - kdme2*Me 
+dmMelet7/dt=k3*mMe*let7 - k4*mMelet7 - kdmMelet7*mMelet7
+dmMa/dt=vsmcyc*ksmma*E2F - k5*mMa*let7 + k6*mMalet7 -kdmma*mMa
+dMa/dt=ksa*mMa-kdma*APC*(Ma/(Ma+Kda)) - kdma2*Ma
+dmMalet7/dt=k5*mMa*let7 - k6*mMalet7 - kdmMalet7*mMalet7
+dmMb/dt=vsmcyc*vsmmb - k7*mMb*let7 + k8*mMblet7 - kdmmb*mMb
+dMb/dt=vsb*mMb*Ma-kdmb*APC*(Mb/(Mb+Kdb)) - kdmb2*Mb
+dmMblet7/dt=k7*mMb*let7 - k8*mMblet7 - kdmMblet7*mMblet7
+dAPC/dt=k1apc*Mb*((APCtot-APC)/((APCtot-APC)+Kaapc))-V2apc*(APC/(APC+Kiapc))
+
+
+param deg=0, vsmcyc=1.5, GF=1, ksmmd=0.03, kdmmd=0.2, ksd=0.5, Kgf=0.1, kdmd=0.5,
+param k1e2f=2.3, Kae2f=0.01, k2e2f=2.5, Kie2f=0.01, E2Ftot=4,
+param ksmme=0.035, kdmme=0.08, kse=0.8, kdme=0.2, kdme2=0.1, Kde=0.08,
+param ksmma=0.07, kdmma=0.08, ksa=0.4, kdma=0.35, kdma2=0.05, Kda=0.01,
+param vsmmb=0.06, kdmmb=0.08, vsb=0.35, kdmb=0.2, kdmb2=0.7, Kdb=0.01,
+param k1apc=1, Kaapc=2, V2apc=0.3, Kiapc=10, APCtot=2,
+param k1=1, k2=0.01, k3=1, k4=0.01, k5=1, k6=0.01, k7=1, k8=0.01,
+param kdmMdlet7=1, kdmMelet7=1, kdmMalet7=1, kdmMblet7=1,
+
+
+Let7TOT=Let7+mMdlet7+mMelet7+mMalet7+mMblet7+mIL6let7+mRaslet7
+
+
+### Integration/Display parameters
+
+@ meth=stiff, bounds=1000000, dt=0.01, maxstor=5000000, total=300
+@ nplots=3, yp1=NFKB, yp2=let7, yp3=Mb
+
+done
+
